@@ -1,0 +1,79 @@
+
+import { useState } from "react";
+import { redirect, useSubmit } from 'react-router';
+
+import { LuSparkles } from "react-icons/lu";
+import { RiYoutubeLine } from "react-icons/ri";
+import { FaArrowRight } from "react-icons/fa6";
+
+export default function HomePage() {
+    const [url, setUrl] = useState("");
+    const submit = useSubmit();
+
+    function handleClick() {
+        const formData = new FormData();
+        formData.append("youtube_url", url);
+
+        submit(formData, { method: "post" });
+
+    };
+
+    return (
+        <>
+            <div className="flex flex-col justify-center items-center gap-2  flex-wrap relative top-50">
+                <div className="flex items-center gap-2.5 text-indigo-400 font-semibold text-[13px] border border-slate-700  py-1 px-2 rounded-full bg-slate-900">
+                    <LuSparkles />
+                    <p>Semantic Video Search & Chat</p>
+                </div>
+                <p className="w-xl text-5xl font-extrabold leading-tight tracking-tight text-center ">Chat with any <span className="bg-linear-to-r from-red-500 via-orange-400 to-indigo-400 bg-clip-text text-transparent">YouTube Video</span> </p>
+
+                <p className="text-slate-400 mb-5">Please paste the link of the video to continue</p>
+
+                <div className="bg-slate-900 flex items-center justify-center gap-2 h-16 w-2xl p-3 rounded-xl border border-slate-700  shadow-[0_0_15px_rgba(99,102,241,0.25)] ">
+                    <RiYoutubeLine size='30px' color="red" />
+                    <input
+                        type="text"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        placeholder="Paste YouTube video URL here (e.g., https://www.youtube.com/watch?v=...)"
+                        className="w-full bg-slate-900 outline-none"
+                    />
+                    <button
+
+                        onClick={handleClick}
+                        disabled={!url.trim()}
+                        className="bg-indigo-600 flex items-center gap-1 h-10 px-5 font-semibold text-[14px] rounded-lg cursor-pointer hover:bg-indigo-500 disabled:cursor-not-allowed"
+                    >Analyze <FaArrowRight />
+                    </button>
+                </div>
+
+            </div>
+
+
+
+        </>
+    )
+}
+
+export async function action({request}) {
+    const data =  await request.formData();
+    const youtube_url = data.get('youtube_url');
+   
+    const API_URL = import.meta.env.VITE_API_URL;
+    const response = await fetch(`${API_URL}/load-video`, {
+        method: request.method,
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({youtube_url})
+    });
+
+    if(!response.ok){
+        throw new Response(JSON.stringify({message: 'Could not load the video. Something went wrong'}));
+    }
+    // remian to show the error page with this error message. do later
+    const result = await response.json();
+
+     return redirect("/chat?url=" + encodeURIComponent(youtube_url));
+
+}
