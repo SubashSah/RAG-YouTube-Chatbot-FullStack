@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,7 +9,6 @@ from rag_chain import (
     create_retriever,
     build_chain,
 )
-
 
 app = FastAPI()
 
@@ -33,6 +32,7 @@ current_chain = None
 # Request Models
 # --------------------------------------------------
 
+
 class LoadVideoRequest(BaseModel):
     youtube_url: str
 
@@ -45,6 +45,7 @@ class QuestionRequest(BaseModel):
 # Root Endpoint
 # --------------------------------------------------
 
+
 @app.get("/")
 def root():
     return {"message": "YouTube RAG Chatbot API running!"}
@@ -54,6 +55,7 @@ def root():
 # Load Video Endpoint
 # --------------------------------------------------
 
+
 @app.post("/load-video")
 def load_video(req: LoadVideoRequest):
 
@@ -61,31 +63,36 @@ def load_video(req: LoadVideoRequest):
     global current_chain
 
     # Avoid rebuilding if same video is already loaded
-    if req.youtube_url == current_video_url:
-        return {
-            "message": "Video already loaded."
-        }
+    try:
+        if req.youtube_url == current_video_url:
+            return {"message": "Video already loaded."}
 
-    transcript = fetch_transcript(req.youtube_url)
+        transcript = fetch_transcript(req.youtube_url)
 
-    chunks = split_transcript(transcript)
+        chunks = split_transcript(transcript)
 
-    vector_store = create_vector_store(chunks)
+        vector_store = create_vector_store(chunks)
 
-    retriever = create_retriever(vector_store)
+        retriever = create_retriever(vector_store)
 
-    current_chain = build_chain(retriever)
+        current_chain = build_chain(retriever)
 
-    current_video_url = req.youtube_url
+        current_video_url = req.youtube_url
 
-    return {
-        "message": "Video loaded successfully."
-    }
+        return {"message": "Video loaded successfully."}
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="An unexpected server error occurred."
+        )
 
 
 # --------------------------------------------------
 # Ask Question Endpoint
 # --------------------------------------------------
+
 
 @app.post("/ask")
 def ask_question(req: QuestionRequest):
@@ -93,12 +100,8 @@ def ask_question(req: QuestionRequest):
     global current_chain
 
     if current_chain is None:
-        return {
-            "error": "Please load a YouTube video first."
-        }
+        return {"error": "Please load a YouTube video first."}
 
     answer = current_chain.invoke(req.question)
 
-    return {
-        "answer": answer
-    }
+    return {"answer": answer}

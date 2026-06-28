@@ -4,11 +4,13 @@ import HomePage, { action as sendUrlAction } from "./pages/Home"
 import {action as queryAction} from "./components/Messenger";
 import ChatPage from "./pages/Chat"
 import RootLayout from "./pages/Root";
+import ErrorPage from "./pages/Error";
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
+    errorElement: <ErrorPage/>,
     children: [
       { index: true, element: <HomePage />, action: sendUrlAction },
       { path: 'chat', element: <ChatPage />, action: queryAction }

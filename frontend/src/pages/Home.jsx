@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { redirect, useSubmit } from 'react-router';
+import { useState,useEffect } from "react";
+import { redirect, useSubmit, useRouteError, useActionData } from 'react-router';
 
 import { LuSparkles } from "react-icons/lu";
 import { RiYoutubeLine } from "react-icons/ri";
@@ -8,11 +8,27 @@ import { FaArrowRight } from "react-icons/fa6";
 
 export default function HomePage() {
     const [url, setUrl] = useState("");
+    const [showError, setShowError] = useState(true);
+
     const submit = useSubmit();
+    const data = useActionData();
+
+    function OnChange(e){
+        setUrl(e.target.value);
+        setShowError(false);
+    }
+
+    useEffect(()=>{
+
+        if(data){
+            setShowError(true);
+        }
+    },[data])
 
     function handleClick() {
         const formData = new FormData();
         formData.append("youtube_url", url);
+        setUrl("");
 
         submit(formData, { method: "post" });
 
@@ -20,7 +36,7 @@ export default function HomePage() {
 
     return (
         <>
-            <div className="flex flex-col justify-center items-center gap-2  flex-wrap relative top-50">
+            <div className="flex flex-col  items-center gap-2  flex-wrap relative top-50">
                 <div className="flex items-center gap-2.5 text-indigo-400 font-semibold text-[13px] border border-slate-700  py-1 px-2 rounded-full bg-slate-900">
                     <LuSparkles />
                     <p>Semantic Video Search & Chat</p>
@@ -34,7 +50,7 @@ export default function HomePage() {
                     <input
                         type="text"
                         value={url}
-                        onChange={(e) => setUrl(e.target.value)}
+                        onChange={OnChange}
                         placeholder="Paste YouTube video URL here (e.g., https://www.youtube.com/watch?v=...)"
                         className="w-full bg-slate-900 outline-none"
                     />
@@ -46,6 +62,9 @@ export default function HomePage() {
                     >Analyze <FaArrowRight />
                     </button>
                 </div>
+                {showError && data &&
+                    <p>{data.message}</p>
+                }
 
             </div>
 
@@ -55,25 +74,35 @@ export default function HomePage() {
     )
 }
 
-export async function action({request}) {
-    const data =  await request.formData();
+export async function action({ request }) {
+    const data = await request.formData();
     const youtube_url = data.get('youtube_url');
-   
+
     const API_URL = import.meta.env.VITE_API_URL;
     const response = await fetch(`${API_URL}/load-video`, {
         method: request.method,
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({youtube_url})
+        body: JSON.stringify({ youtube_url })
     });
 
-    if(!response.ok){
-        throw new Response(JSON.stringify({message: 'Could not load the video. Something went wrong'}));
-    }
-    // remian to show the error page with this error message. do later
     const result = await response.json();
 
-     return redirect("/chat?url=" + encodeURIComponent(youtube_url));
+    if (!response.ok) {
+        if (response.status === 400) {
+            return {
+                message: result.detail,
+            }
+        }
+        else throw new Response(JSON.stringify({
+            message: result.detail
+        }),
+            {
+                status: response.status
+            });
+    }
+
+    return redirect("/chat?url=" + encodeURIComponent(youtube_url));
 
 }
