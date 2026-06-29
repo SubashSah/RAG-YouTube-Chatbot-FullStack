@@ -1,6 +1,6 @@
 
 import { useState,useEffect } from "react";
-import { redirect, useSubmit, useRouteError, useActionData } from 'react-router';
+import { redirect, useSubmit, useActionData } from 'react-router';
 
 import { LuSparkles } from "react-icons/lu";
 import { RiYoutubeLine } from "react-icons/ri";
@@ -92,14 +92,14 @@ export async function action({ request }) {
     if (!response.ok) {
         if (response.status === 400) {
             return {
-                message: result.detail,
+                message: result.detail, //goes to useActionData
             }
         }
         else throw new Response(JSON.stringify({
             message: result.detail
         }),
             {
-                status: response.status
+                status: response.status //goes to errorElement page.
             });
     }
 

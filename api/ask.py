@@ -80,7 +80,7 @@ def load_video(req: LoadVideoRequest):
         current_video_url = req.youtube_url
 
         return {"message": "Video loaded successfully."}
-    
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception:
@@ -100,7 +100,7 @@ def ask_question(req: QuestionRequest):
     global current_chain
 
     if current_chain is None:
-        return {"error": "Please load a YouTube video first."}
+        raise HTTPException(status_code=409, detail="Please load a YouTube video first")
 
     answer = current_chain.invoke(req.question)
 
