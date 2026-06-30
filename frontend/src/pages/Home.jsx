@@ -1,29 +1,47 @@
 
-import { useState,useEffect } from "react";
-import { redirect, useSubmit, useActionData } from 'react-router';
+import { useState, useEffect, useRef } from "react";
+import { redirect, useSubmit, useActionData, useNavigation } from 'react-router';
 
 import { LuSparkles } from "react-icons/lu";
 import { RiYoutubeLine } from "react-icons/ri";
 import { FaArrowRight } from "react-icons/fa6";
+import LoadingModal from "../components/LoadingModal";
 
 export default function HomePage() {
     const [url, setUrl] = useState("");
     const [showError, setShowError] = useState(true);
+    const dialogRef = useRef();
 
     const submit = useSubmit();
     const data = useActionData();
+    const navigation = useNavigation();
 
-    function OnChange(e){
+    function OnChange(e) {
         setUrl(e.target.value);
         setShowError(false);
     }
 
-    useEffect(()=>{
+    useEffect(() => {
 
-        if(data){
+        if (data) {
             setShowError(true);
         }
-    },[data])
+    }, [data])
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+
+        if (navigation.state !== "idle") {
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+        } else {
+            if (dialog.open) {
+                dialog.close()
+            }
+        }
+    }, [navigation.state]);
 
     function handleClick() {
         const formData = new FormData();
@@ -36,8 +54,9 @@ export default function HomePage() {
 
     return (
         <>
+            <LoadingModal ref={dialogRef} />
             <div className="flex flex-col  items-center gap-2  flex-wrap relative top-50">
-                <div className="flex items-center gap-2.5 text-indigo-400 font-semibold text-[13px] border border-slate-700  py-1 px-2 rounded-full bg-slate-900">
+                <div className="flex items-center gap-2.5 text-indigo-400 font-semibold text-[13px] border border-slate-700  py-1 px-2 rounded-full bg-slate-00">
                     <LuSparkles />
                     <p>Semantic Video Search & Chat</p>
                 </div>
@@ -58,8 +77,10 @@ export default function HomePage() {
 
                         onClick={handleClick}
                         disabled={!url.trim()}
-                        className="bg-indigo-600 flex items-center gap-1 h-10 px-5 font-semibold text-[14px] rounded-lg cursor-pointer hover:bg-indigo-500 disabled:cursor-not-allowed"
-                    >Analyze <FaArrowRight />
+                        className="bg-indigo-600 flex justify-center items-center gap-1 h-10 w-35 p-2 font-semibold text-[14px] rounded-lg cursor-pointer hover:bg-indigo-500 disabled:cursor-not-allowed"
+                    >
+                        Analyze
+                        <FaArrowRight />
                     </button>
                 </div>
                 {showError && data &&
@@ -106,3 +127,4 @@ export async function action({ request }) {
     return redirect("/chat?url=" + encodeURIComponent(youtube_url));
 
 }
+
