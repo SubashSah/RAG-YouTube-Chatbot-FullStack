@@ -12,7 +12,7 @@ export default function ChatPage() {
 
     return (
         <>
-            <div className="flex gap-2  h-[90vh] mx-1">
+            <div className="flex gap-2 h-[90vh] mx-1">
                 <aside className="border border-slate-500 w-[35%] rounded-md ">
                     <VideoInsights url={url} />
                 </aside>
